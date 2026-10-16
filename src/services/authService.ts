@@ -5,6 +5,7 @@ import type {
     ApiResponse,
     LoginRequest,
     LoginResponse,
+    RefreshSessionResponse,
     RegisterRequest,
     RegisterResponse,
 } from "../types/auth";
@@ -23,6 +24,15 @@ export const loginUser = async (input: LoginRequest): Promise<LoginResponse> => 
     const response = await api.post<ApiResponse<LoginResponse>>(
         API_AUTH.LOGIN,
         input,
+    );
+
+    return response.data.data;
+};
+
+
+export const refreshAccessToken = async (): Promise<RefreshSessionResponse> => {
+    const response = await api.post<ApiResponse<RefreshSessionResponse>>(
+        API_AUTH.REFRESH,
     );
 
     return response.data.data;

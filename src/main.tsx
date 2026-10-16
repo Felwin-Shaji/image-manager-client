@@ -6,12 +6,15 @@ import "./index.css";
 import { Provider } from "react-redux";
 import { store } from "./store/store";
 import { Toaster } from "react-hot-toast";
+import AuthInitializer from "./components/AuthInitializer";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
       <BrowserRouter>
-        <App />
+        <AuthInitializer>
+          <App />
+        </AuthInitializer>
         <Toaster position="top-right" />
       </BrowserRouter>
     </Provider>
