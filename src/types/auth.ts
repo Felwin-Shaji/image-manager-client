@@ -29,3 +29,13 @@ export interface ApiResponse<T> {
     message: string;
     data: T;
 }
+
+export interface RefreshSessionResponse {
+    accessToken: string;
+    user: {
+        id: string;
+        email: string;
+        phone: string;
+    };
+}
+
