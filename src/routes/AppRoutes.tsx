@@ -5,20 +5,8 @@ import LoginPage from "../Pages/Login/LoginPage";
 
 import PublicRoute from "./PublicRoute";
 import PrivateRoute from "./PrivateRoute";
+import GalleryPage from "../Pages/Gallery/GalleryPage";
 
-
-function GalleryPlaceholder() {
-    return (
-        <main className="min-h-dvh bg-[#09090f] p-8 text-white">
-            <h1 className="text-2xl font-semibold">
-                Image Gallery
-            </h1>
-            <p className="mt-2 text-slate-400">
-                You are authenticated.
-            </p>
-        </main>
-    );
-}
 
 export default function AppRoutes() {
     return (
@@ -33,7 +21,7 @@ export default function AppRoutes() {
             <Route element={<PrivateRoute />}>
                 <Route
                     path="/gallery"
-                    element={<GalleryPlaceholder />}
+                    element={<GalleryPage />}
                 />
             </Route>
 
