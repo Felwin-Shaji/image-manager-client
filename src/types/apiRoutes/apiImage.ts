@@ -4,4 +4,6 @@ export const API_IMAGES = {
     UPDATE_TITLE: (id: string) => `/api/images/${id}/title`,
     REPLACE: (id: string) => `/api/images/${id}/replace`,
     DELETE: (id: string) => `/api/images/${id}`,
+
+    UPDATE_ORDER: "/api/images/order",
 } as const;

@@ -1,35 +1,53 @@
 
-import type { ChangeEvent, FormEvent } from "react";
+import type {
+    ChangeEvent,
+    DragEvent,
+    FormEvent,
+} from "react";
 import toast from "react-hot-toast";
 import type { ImageItem } from "../../../types/image";
+import DeleteImageConfirmation from "./DeleteImageConfirmation";
 
 interface ImageCardProps {
     image: ImageItem;
     isEditing: boolean;
     editedTitle: string;
     isSaving: boolean;
+    isDeleting: boolean;
+    isDragging: boolean;
+
     onStartEditing: (image: ImageItem) => void;
     onCancelEditing: () => void;
     onTitleChange: (title: string) => void;
     onSaveTitle: (imageId: string) => Promise<void>;
     onReplaceImage: (imageId: string, file: File) => Promise<void>;
     onDelete: (imageId: string) => Promise<void>;
-    isDeleting: boolean;
+
+    onDragStart: (imageId: string) => void;
+    onDragOver: (event: DragEvent<HTMLElement>) => void;
+    onDrop: (imageId: string) => void;
+    onDragEnd: () => void;
 }
 
 const DELETE_CONFIRM_TOAST_ID = "delete-image-confirm";
+
 export default function ImageCard({
     image,
     isEditing,
     editedTitle,
     isSaving,
+    isDeleting,
+    isDragging,
     onStartEditing,
     onCancelEditing,
     onTitleChange,
     onSaveTitle,
     onReplaceImage,
-    isDeleting,
     onDelete,
+    onDragStart,
+    onDragOver,
+    onDrop,
+    onDragEnd,
 }: ImageCardProps) {
     const handleTitleSubmit = (
         event: FormEvent<HTMLFormElement>,
@@ -47,16 +65,73 @@ export default function ImageCard({
             void onReplaceImage(image.id, file);
         }
 
-        // Allow the user to select the same file again.
         event.target.value = "";
     };
 
+    const handleDeleteClick = () => {
+        toast.dismiss(DELETE_CONFIRM_TOAST_ID);
+
+        toast(
+            (t) => (
+                <DeleteImageConfirmation
+                    imageTitle={image.title}
+                    toastId={t.id}
+                    onConfirm={() => {
+                        void onDelete(image.id);
+                    }}
+                />
+            ),
+            {
+                id: DELETE_CONFIRM_TOAST_ID,
+                duration: Infinity,
+                position: "top-center",
+                style: {
+                    background: "#18181b",
+                    border: "1px solid #3f3f46",
+                    padding: "16px",
+                    marginTop: "40vh",
+                },
+            },
+        );
+    };
+
+    const handleDragStart = () => {
+        onDragStart(image.id);
+    };
+
+    const handleDragOver = (
+        event: DragEvent<HTMLElement>,
+    ) => {
+        onDragOver(event);
+    };
+
+    const handleDrop = (
+        event: DragEvent<HTMLElement>,
+    ) => {
+        event.preventDefault();
+        onDrop(image.id);
+    };
+
     return (
-        <article className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition hover:border-violet-400/40">
+        <article
+            draggable={!isSaving && !isEditing}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragEnd={onDragEnd}
+            className={`overflow-hidden rounded-2xl border bg-white/[0.03] transition ${isDragging
+                ? "border-violet-400 opacity-40"
+                : "border-white/10 hover:border-violet-400/40"
+                } ${isSaving || isEditing
+                    ? "cursor-default"
+                    : "cursor-grab active:cursor-grabbing"
+                }`}
+        >
             <img
                 src={image.secureUrl}
                 alt={image.title}
                 loading="lazy"
+                draggable={false}
                 className="h-56 w-full object-cover"
             />
 
@@ -139,66 +214,14 @@ export default function ImageCard({
                     />
                 </label>
 
-
-
                 <button
                     type="button"
                     disabled={isSaving || isDeleting}
-                    onClick={() => {
-                        toast.dismiss(DELETE_CONFIRM_TOAST_ID);
-
-                        toast(
-                            (t) => (
-                                <div className="w-72 text-white">
-                                    <p className="font-semibold">
-                                        Delete this image?
-                                    </p>
-
-                                    <p className="mt-1 text-sm text-gray-300">
-                                        "{image.title}" will be permanently deleted.
-                                    </p>
-
-                                    <div className="mt-4 flex justify-end gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => toast.dismiss(t.id)}
-                                            className="rounded-lg border border-white/20 px-3 py-1.5 text-sm hover:bg-white/10"
-                                        >
-                                            Cancel
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                toast.dismiss(t.id);
-                                                void onDelete(image.id);
-                                            }}
-                                            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium hover:bg-red-500"
-                                        >
-                                            Delete
-                                        </button>
-                                    </div>
-                                </div>
-                            ),
-                            {
-                                id: DELETE_CONFIRM_TOAST_ID,
-                                duration: Infinity,
-                                position: "top-center",
-                                style: {
-                                    background: "#18181b",
-                                    border: "1px solid #3f3f46",
-                                    padding: "16px",
-                                    marginTop: "40vh",
-                                },
-                            },
-                        );
-                    }}
+                    onClick={handleDeleteClick}
                     className="mt-3 flex w-full items-center justify-center rounded-lg border border-red-500/30 px-3 py-2 text-sm text-red-400 transition hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                     {isDeleting ? "Deleting..." : "Delete image"}
                 </button>
-
-
             </div>
         </article>
     );

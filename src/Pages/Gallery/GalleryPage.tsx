@@ -1,5 +1,6 @@
 
 import { useState } from "react";
+import type { DragEvent } from "react";
 import GalleryHeader from "./components/GalleryHeader";
 import ImageUploadForm from "./components/ImageUploadForm";
 import ImageCard from "./components/ImageCard";
@@ -7,6 +8,7 @@ import { useGallery } from "./galleryHook/useGallery";
 
 export default function GalleryPage() {
     const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [draggedImageId, setDraggedImageId] = useState<string | null>(null);
 
     const {
         images,
@@ -28,10 +30,59 @@ export default function GalleryPage() {
         deletingImageId,
         deleteError,
         deleteImageById,
+        saveImageOrder,
+        isSavingOrder,
+        orderError,
     } = useGallery();
 
-    const actionError =
-        titleError ?? replacementError ?? deleteError;
+    const actionError = titleError ?? replacementError ?? deleteError;
+
+    const handleDragStart = (imageId: string) => {
+        setDraggedImageId(imageId);
+    };
+
+    const handleDragOver = (event: DragEvent<HTMLElement>) => {
+        event.preventDefault();
+    };
+
+    const handleDrop = (targetImageId: string) => {
+        if (
+            !draggedImageId ||
+            draggedImageId === targetImageId ||
+            isSavingOrder
+        ) {
+            setDraggedImageId(null);
+            return;
+        }
+
+        const reorderedImages = [...images];
+
+        const draggedIndex = reorderedImages.findIndex(
+            (image) => image.id === draggedImageId,
+        );
+
+        const targetIndex = reorderedImages.findIndex(
+            (image) => image.id === targetImageId,
+        );
+
+        if (draggedIndex === -1 || targetIndex === -1) {
+            setDraggedImageId(null);
+            return;
+        }
+
+        const [draggedImage] = reorderedImages.splice(draggedIndex, 1);
+        reorderedImages.splice(targetIndex, 0, draggedImage);
+
+        void saveImageOrder(
+            reorderedImages.map((image) => image.id),
+        );
+
+        setDraggedImageId(null);
+    };
+
+    const handleDragEnd = () => {
+        setDraggedImageId(null);
+    };
 
     if (isLoading) {
         return (
@@ -81,7 +132,8 @@ export default function GalleryPage() {
                     <button
                         type="button"
                         onClick={() => setIsUploadOpen(true)}
-                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 font-medium transition hover:bg-violet-500"
+                        disabled={isSavingOrder}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 font-medium transition hover:bg-violet-500 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <span className="text-xl">+</span>
                         Upload images
@@ -94,6 +146,21 @@ export default function GalleryPage() {
                         className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400"
                     >
                         {actionError}
+                    </p>
+                )}
+
+                {orderError && (
+                    <p
+                        role="alert"
+                        className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+                    >
+                        {orderError}
+                    </p>
+                )}
+
+                {isSavingOrder && (
+                    <p className="mb-5 text-sm text-violet-300">
+                        Saving image order...
                     </p>
                 )}
 
@@ -131,15 +198,22 @@ export default function GalleryPage() {
                                 isSaving={
                                     isSavingTitle ||
                                     isReplacing ||
-                                    deletingImageId !== null
+                                    deletingImageId !== null ||
+                                    isSavingOrder
                                 }
                                 isDeleting={deletingImageId === image.id}
+                                isDragging={draggedImageId === image.id}
                                 onStartEditing={startEditing}
                                 onCancelEditing={cancelEditing}
                                 onTitleChange={setEditedTitle}
                                 onSaveTitle={saveTitle}
                                 onReplaceImage={replaceImageFile}
                                 onDelete={deleteImageById}
+                                
+                                onDragStart={handleDragStart}
+                                onDragOver={handleDragOver}
+                                onDrop={handleDrop}
+                                onDragEnd={handleDragEnd}
                             />
                         ))}
                     </section>
