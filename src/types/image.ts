@@ -17,3 +17,14 @@ export interface UploadImageResponse {
     message: string;
     data: ImageItem[];
 }
+
+export interface SingleImageResponse {
+    success: boolean;
+    message: string;
+    data: ImageItem;
+}
+
+export interface DeleteImageResponse {
+    success: boolean;
+    message: string;
+}

@@ -1,61 +1,61 @@
-import { useCallback, useEffect, useState } from "react";
-import { getImages } from "../../services/imageService";
-import type { ImageItem } from "../../types/image";
+
+import { useState } from "react";
 import GalleryHeader from "./components/GalleryHeader";
 import ImageUploadForm from "./components/ImageUploadForm";
+import ImageCard from "./components/ImageCard";
+import { useGallery } from "./galleryHook/useGallery";
 
 export default function GalleryPage() {
-    const [images, setImages] = useState<ImageItem[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
 
-    const refreshImages = useCallback(async (uploadedImages?: ImageItem[]) => {
-        if (uploadedImages) {
-            setImages((current) => [...current, ...uploadedImages]);
-            return;
-        }
+    const {
+        images,
+        isLoading,
+        error,
+        retryLoading,
+        addUploadedImages,
+        editingImageId,
+        editedTitle,
+        setEditedTitle,
+        startEditing,
+        cancelEditing,
+        saveTitle,
+        titleError,
+        isSavingTitle,
+        replaceImageFile,
+        replacementError,
+        isReplacing,
+        deletingImageId,
+        deleteError,
+        deleteImageById,
+    } = useGallery();
 
-        const result = await getImages();
-        setImages(result);
-    }, []);
-
-    useEffect(() => {
-        const fetchImages = async () => {
-            try {
-                setIsLoading(true);
-                setError(null);
-
-                const result = await getImages();
-                setImages(result);
-            } catch {
-                setError("Unable to load your images. Please try again.");
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        void fetchImages();
-    }, []);
+    const actionError =
+        titleError ?? replacementError ?? deleteError;
 
     if (isLoading) {
-        return <main className="p-8 text-white">Loading your gallery...</main>;
+        return (
+            <main className="min-h-screen bg-[#09090f] p-8 text-white">
+                Loading your gallery...
+            </main>
+        );
     }
 
     if (error) {
         return (
-            <main className="p-8 text-white">
+            <main className="min-h-screen bg-[#09090f] p-8 text-white">
                 <p>{error}</p>
+
                 <button
-                    onClick={() => window.location.reload()}
-                    className="mt-4 rounded-lg bg-violet-600 px-4 py-2"
+                    type="button"
+                    onClick={() => void retryLoading()}
+                    className="mt-4 rounded-lg bg-violet-600 px-4 py-2 transition hover:bg-violet-500"
                 >
                     Try again
                 </button>
             </main>
         );
     }
-
 
     return (
         <main className="min-h-screen bg-[#09090f] text-white">
@@ -88,6 +88,15 @@ export default function GalleryPage() {
                     </button>
                 </header>
 
+                {actionError && (
+                    <p
+                        role="alert"
+                        className="mb-5 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400"
+                    >
+                        {actionError}
+                    </p>
+                )}
+
                 {images.length === 0 ? (
                     <section className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-dashed border-white/15 bg-white/[0.02] px-6 py-12 text-center">
                         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-500/10 text-2xl text-violet-300">
@@ -99,7 +108,8 @@ export default function GalleryPage() {
                         </h2>
 
                         <p className="mt-2 max-w-sm text-gray-400">
-                            Upload your favorite images and keep them organized in one place.
+                            Upload your favorite images and keep them
+                            organized in one place.
                         </p>
 
                         <button
@@ -113,40 +123,35 @@ export default function GalleryPage() {
                 ) : (
                     <section className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {images.map((image) => (
-                            <article
+                            <ImageCard
                                 key={image.id}
-                                className="overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] transition hover:border-violet-400/40"
-                            >
-                                <img
-                                    src={image.secureUrl}
-                                    alt={image.title}
-                                    loading="lazy"
-                                    className="h-56 w-full object-cover"
-                                />
-
-                                <div className="p-4">
-                                    <h2 className="truncate font-medium">
-                                        {image.title}
-                                    </h2>
-
-                                    <p className="mt-1 text-sm text-gray-400">
-                                        {image.width} × {image.height}
-                                    </p>
-                                </div>
-                            </article>
+                                image={image}
+                                isEditing={editingImageId === image.id}
+                                editedTitle={editedTitle}
+                                isSaving={
+                                    isSavingTitle ||
+                                    isReplacing ||
+                                    deletingImageId !== null
+                                }
+                                isDeleting={deletingImageId === image.id}
+                                onStartEditing={startEditing}
+                                onCancelEditing={cancelEditing}
+                                onTitleChange={setEditedTitle}
+                                onSaveTitle={saveTitle}
+                                onReplaceImage={replaceImageFile}
+                                onDelete={deleteImageById}
+                            />
                         ))}
                     </section>
                 )}
             </div>
+
             {isUploadOpen && (
                 <ImageUploadForm
                     onClose={() => setIsUploadOpen(false)}
-                    onUploaded={(uploadedImages) => {
-                        setImages((current) => [...current, ...uploadedImages]);
-                    }}
+                    onUploaded={addUploadedImages}
                 />
             )}
         </main>
     );
-
 }
