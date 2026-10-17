@@ -28,3 +28,8 @@ export interface DeleteImageResponse {
     success: boolean;
     message: string;
 }
+
+export interface UpdateImageOrderResponse {
+    success: boolean;
+    message: string;
+}

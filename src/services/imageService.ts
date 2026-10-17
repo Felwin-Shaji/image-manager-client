@@ -1,6 +1,6 @@
 
 import api from "./api";
-import type { DeleteImageResponse, ImageItem, SingleImageResponse, UploadImageResponse } from "../types/image";
+import type { DeleteImageResponse, ImageItem, SingleImageResponse, UpdateImageOrderResponse, UploadImageResponse } from "../types/image";
 import { API_IMAGES } from "../types/apiRoutes/apiImage";
 
 export interface UploadImageInput {
@@ -74,4 +74,12 @@ export const replaceImage = async (
 
 export const deleteImage = async (id: string): Promise<void> => {
     await api.delete<DeleteImageResponse>(API_IMAGES.DELETE(id));
+};
+
+
+export const updateImageOrder = async (imageIds: string[]): Promise<void> => {
+    await api.patch<UpdateImageOrderResponse>(
+        API_IMAGES.UPDATE_ORDER,
+        { imageIds },
+    );
 };
